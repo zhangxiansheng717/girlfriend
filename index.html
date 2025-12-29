@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👸 女王大人的专属礼物盲盒</title>
+    <style>
+        body {
+            background-color: #ffe6e6; /* 浪漫粉背景 */
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #d63384;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-radius: 50%;
+            border: 10px solid #fff;
+        }
+
+        /* 纯CSS画转盘，无需图片 */
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); /* 旋转动画曲线 */
+            /* 扇形颜色在JS中动态生成，这里留空 */
+        }
+
+        /* 指针 */
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #ff4757;
+            z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+        }
+
+        /* 中间按钮 */
+        .center-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #d63384;
+            font-size: 18px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 5;
+            user-select: none;
+        }
+
+        .center-btn:active {
+            background: #f0f0f0;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .result-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+            animation: popIn 0.3s ease;
+        }
+
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .modal-text { font-size: 16px; color: #333; margin-bottom: 20px; line-height: 1.5; }
+        .modal-score { color: #ff4757; font-weight: bold; font-size: 18px; }
+        .close-btn {
+            background: #d63384; color: #fff; border: none;
+            padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 16px;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✨ 这是一个神奇的按钮 ✨</h1>
+    
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <div id="wheel"></div>
+        <div class="center-btn" onclick="startSpin()">抽 奖</div>
+    </div>
+
+    <!-- 弹窗 -->
+    <div class="result-modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-title">🎉 结果出炉 🎉</div>
+            <div class="modal-text" id="resultText"></div>
+            <div class="modal-score" id="resultScore"></div>
+            <br>
+            <p style="font-size:12px; color:#888;">*请截图发给你的男朋友兑换哦</p>
+            <button class="close-btn" onclick="closeModal()">开心收下</button>
+        </div>
+    </div>
+
+    <script>
+        // ================= 配置区 =================
+        // 你在这里修改奖品、概率（weight）和积分
+        // 现在的设置：越贵的 weight 越小，越难抽中
+        const prizes = [
+            { name: "Lv5: 400-500元大礼", color: "#ffadad", weight: 5, score: 10 },
+            { name: "Lv4: 300-400元惊喜", color: "#ffd6a5", weight: 15, score: 30 },
+            { name: "Lv3: 200-300元礼物", color: "#fdffb6", weight: 30, score: 60 },
+            { name: "Lv2: 100-200元小物", color: "#caffbf", weight: 30, score: 100 },
+            { name: "Lv1: 奶茶/零食包",   color: "#9bf6ff", weight: 20, score: 150 }
+        ];
+        // =========================================
+
+        const wheel = document.getElementById('wheel');
+        let isSpinning = false;
+
+        // 初始化转盘背景（conic-gradient）
+        function initWheel() {
+            let gradientStr = '';
+            let currentPercent = 0;
+            const segmentSize = 100 / prizes.length; // 视觉上平分扇形（虽然概率不同，但视觉平分更好看）
+
+            prizes.forEach((prize, index) => {
+                const start = currentPercent;
+                const end = currentPercent + segmentSize;
+                gradientStr += `${prize.color} ${start}% ${end}%,`;
+                currentPercent += segmentSize;
+            });
+            
+            // 去掉最后一个逗号
+            gradientStr = `conic-gradient(${gradientStr.slice(0, -1)})`;
+            wheel.style.background = gradientStr;
+        }
+
+        initWheel();
+
+        // 核心抽奖逻辑
+        function getPrizeIndex() {
+            const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < prizes.length; i++) {
+                random -= prizes[i].weight;
+                if (random <= 0) {
+                    return i;
+                }
+            }
+            return prizes.length - 1;
+        }
+
+        function startSpin() {
+            if (isSpinning) return;
+            isSpinning = true;
+
+            // 1. 计算中奖结果
+            const prizeIndex = getPrizeIndex();
+            const prize = prizes[prizeIndex];
+
+            // 2. 计算旋转角度
+            // 视觉上平分，所以每个扇形角度是 360 / 数量
+            const segmentDeg = 360 / prizes.length;
+            // 目标是指针指向该扇形中间。由于指针在正上方(0度)，我们需要反向旋转
+            // 基础旋转圈数 (5圈以上，增加紧张感)
+            const baseRotations = 360 * 8; 
+            // 计算目标扇形的中心角度（假设第0个在0-72度）
+            // 我们需要让轮盘转动，使得该扇形停在上方
+            // 简单的数学处理：随机落点在扇形范围内
+            const randomOffset = Math.random() * (segmentDeg - 10) + 5; // 留点边距
+            // 目标角度计算逻辑：为了让特定块停在上面，需要精细计算，这里简化处理：
+            // 因为CSS旋转是顺时针，0度在12点。
+            // 实际上为了简单，我们让它转到一个大概位置，重点是逻辑结果
+            // 这里为了精准匹配视觉，我们反推：
+            // 第i个扇形的起始角度是 i * segmentDeg
+            // 要让它停在12点，需要转动的角度 = (360 - (i * segmentDeg + segmentDeg/2)) 
+            const stopAngle = (360 - (prizeIndex * segmentDeg + segmentDeg / 2));
+            
+            const totalRotate = baseRotations + stopAngle;
+
+            // 3. 执行动画
+            wheel.style.transform = `rotate(${totalRotate}deg)`;
+
+            // 4. 动画结束后弹窗
+            setTimeout(() => {
+                showResult(prize);
+                isSpinning = false;
+                // 重置转盘角度（可选，为了下次旋转不累加太大数字，但为了视觉连贯通常不重置或用特殊处理）
+                // 这里的简易版就不重置了，下次直接在这个基础上加
+            }, 4000); // 4秒和CSS里的transition时间一致
+        }
+
+        function showResult(prize) {
+            const modal = document.getElementById('modal');
+            const text = document.getElementById('resultText');
+            const score = document.getElementById('resultScore');
+
+            text.innerHTML = `恭喜抽中：<br><strong>${prize.name}</strong>`;
+            score.innerHTML = `获得积分：+${prize.score}`;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
