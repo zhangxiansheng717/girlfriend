@@ -2,246 +2,417 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👸 女王大人的专属礼物盲盒</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💖 彭玥柔专属幸运盲盒</title>
     <style>
+        :root {
+            --primary-color: #ff7675;
+        }
+
         body {
-            background-color: #ffe6e6; /* 浪漫粉背景 */
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
+            font-family: 'PingFang SC', sans-serif;
+            margin: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        h1 {
-            color: #d63384;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        .wheel-container {
+            overflow: hidden; /* 禁止整体滚动 */
             position: relative;
-            width: 300px;
-            height: 300px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            border-radius: 50%;
-            border: 10px solid #fff;
         }
 
-        /* 纯CSS画转盘，无需图片 */
-        #wheel {
-            width: 100%;
-            height: 100%;
+        /* === 1. 修复背景泡泡 === */
+        .particles {
+            position: fixed; /* 强制固定在屏幕背后 */
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; /* 最底层 */
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
             border-radius: 50%;
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); /* 旋转动画曲线 */
-            /* 扇形颜色在JS中动态生成，这里留空 */
+            animation: floatUp linear infinite;
         }
 
-        /* 指针 */
+        /* 顶部标题 */
+        .header {
+            margin-top: 20px;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        .score-pill {
+            background: rgba(255,255,255,0.9);
+            padding: 8px 25px;
+            border-radius: 40px;
+            box-shadow: 0 5px 15px rgba(255, 118, 117, 0.2);
+            text-align: center;
+            border: 2px solid #fff;
+        }
+        .score-val { color: var(--primary-color); font-weight: 800; font-size: 26px; }
+
+        /* === 2. 修复转盘布局 === */
+        .wheel-wrapper {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 20px 0;
+            flex-shrink: 0; /* 严禁变形 */
+            z-index: 10;
+        }
+
         .pointer {
             position: absolute;
-            top: -20px;
-            left: 50%;
+            top: -20px; left: 50%;
             transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid #ff4757;
-            z-index: 10;
-            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+            width: 40px; height: 50px;
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='50' viewBox='0 0 40 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 50L0 0H40L20 50Z' fill='%23ff4757' stroke='white' stroke-width='4'/%3E%3C/svg%3E");
+            z-index: 30;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
 
-        /* 中间按钮 */
+        #wheel {
+			box-sizing: border-box; /* ✨ 加上这一行核心代码 */
+			width: 100%; 
+			height: 100%;
+			border-radius: 50%;
+			border: 8px solid #fff;
+			position: relative;
+			background: #fff;
+			transition: transform 8s cubic-bezier(0.15, 0, 0.15, 1);
+			overflow: hidden;
+			box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+		}
+
+        /* === 3. 核心修复：文字定位系统 === */
+        /* 文字容器：像时钟指针一样从圆心射向外圈 */
+        .wheel-label {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 50%; /* 长度等于半径 */
+            height: 0px; 
+            transform-origin: 0% 50%; /* 关键！锚点设在左侧(圆心) */
+            z-index: 5;
+            display: flex;
+            justify-content: flex-end; /* 把文字推到最外侧 */
+            align-items: center;
+            padding-right: 35px; /* 离边缘的距离 */
+            box-sizing: border-box;
+        }
+        
+        /* 文字本体 */
+        .wheel-text {
+            color: #fff;
+            font-weight: 900;
+            font-size: 16px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            /* 这里的旋转由 JS 动态控制(防止倒立) */
+        }
+
         .center-btn {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 76px; height: 76px;
             background: #fff;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #d63384;
-            font-size: 18px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary-color);
+            font-weight: 800; font-size: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             cursor: pointer;
-            z-index: 5;
-            user-select: none;
+            z-index: 40;
+            border: 4px solid #f0f0f0;
         }
 
-        .center-btn:active {
-            background: #f0f0f0;
-            transform: translate(-50%, -50%) scale(0.95);
+        /* 底部列表区 */
+        .dashboard {
+            flex: 1; /* 占满剩余空间 */
+            width: 92%; max-width: 400px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 24px 24px 0 0;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex; flex-direction: column;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 -5px 30px rgba(0,0,0,0.05);
+            min-height: 0; /* 允许滚动 */
+            z-index: 10;
         }
 
-        .result-modal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
+        .tabs { display: flex; background: #f1f2f6; border-radius: 12px; padding: 4px; margin-bottom: 15px; flex-shrink: 0; }
+        .tab { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: bold; color: #999; border-radius: 10px; transition:0.3s; }
+        .tab.active { background: #fff; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        .modal-content {
-            background: #fff;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            width: 80%;
-            max-width: 300px;
-            animation: popIn 0.3s ease;
+        .list-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch;
         }
+        .list-wrapper::-webkit-scrollbar { width: 0; }
 
-        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
-        .modal-text { font-size: 16px; color: #333; margin-bottom: 20px; line-height: 1.5; }
-        .modal-score { color: #ff4757; font-weight: bold; font-size: 18px; }
-        .close-btn {
-            background: #d63384; color: #fff; border: none;
-            padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 16px;
+        .log-item { background: #fff; margin-bottom: 8px; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .log-title { font-weight: bold; color: #333; font-size: 14px; }
+        .log-desc { font-size: 12px; color: #999; margin-top: 2px; }
+        
+        .redeem-btn {
+            flex-shrink: 0;
+            width: 100%; padding: 15px;
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            color: #fff; border: none; border-radius: 16px;
+            font-size: 16px; font-weight: bold;
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
         }
+        .redeem-btn:disabled { background: #dfe6e9; color: #b2bec3; box-shadow: none; }
 
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
+        /* 弹窗 */
+        .modal-mask { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:99; backdrop-filter: blur(5px); }
+        .modal-box { background:#fff; padding:30px; border-radius:24px; width:75%; max-width:300px; text-align:center; animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .modal-btn { background:var(--primary-color); color:#fff; padding:12px 35px; border:none; border-radius:50px; margin-top:20px; font-size:15px; font-weight:bold; box-shadow: 0 5px 15px rgba(255, 118, 117, 0.3); }
+        .modal-btn.cancel { background: #f1f2f6; color: #888; box-shadow: none; margin-right: 10px; }
+
+        @keyframes floatUp { 0% {transform:translateY(100vh);opacity:0;} 50%{opacity:0.6;} 100%{transform:translateY(-100px);opacity:0;} }
+        @keyframes popIn { from {transform:scale(0.8);opacity:0;} to {transform:scale(1);opacity:1;} }
     </style>
 </head>
 <body>
 
-    <h1>✨ 这是一个神奇的按钮 ✨</h1>
-    
-    <div class="wheel-container">
-        <div class="pointer"></div>
-        <div id="wheel"></div>
-        <div class="center-btn" onclick="startSpin()">抽 奖</div>
+    <!-- 背景泡泡 -->
+    <div class="particles" id="particles"></div>
+
+    <div class="header">
+        <div class="score-pill">
+            <div style="font-size:12px; color:#aaa;">当前恋爱积分</div>
+            <div class="score-val" id="scoreVal">0</div>
+        </div>
     </div>
 
-    <!-- 弹窗 -->
-    <div class="result-modal" id="modal">
-        <div class="modal-content">
-            <div class="modal-title">🎉 结果出炉 🎉</div>
-            <div class="modal-text" id="resultText"></div>
-            <div class="modal-score" id="resultScore"></div>
-            <br>
-            <p style="font-size:12px; color:#888;">*请截图发给你的男朋友兑换哦</p>
-            <button class="close-btn" onclick="closeModal()">开心收下</button>
+    <div class="wheel-wrapper">
+        <div class="pointer"></div>
+        <div id="wheel"></div>
+        <div class="center-btn" onclick="spin()">GO</div>
+    </div>
+
+    <div class="dashboard">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('spin')" id="tabSpin">🎁 获赠记录</div>
+            <div class="tab" onclick="switchTab('redeem')" id="tabRedeem">📜 兑换档案</div>
+        </div>
+        
+        <div class="list-wrapper">
+            <div id="listContainer"></div>
+        </div>
+
+        <button class="redeem-btn" id="redeemBtn" onclick="askRedeem()">
+            ✨ 兑换保底大奖 (500分)
+        </button>
+    </div>
+
+    <!-- 结果弹窗 -->
+    <div class="modal-mask" id="resultModal">
+        <div class="modal-box">
+            <div style="font-size:48px; margin-bottom:10px;">🎉</div>
+            <h3 id="rTitle" style="margin:0; font-size:20px; color:#333;"></h3>
+            <p id="rDesc" style="color:#666; margin-top:10px; line-height:1.5;"></p>
+            <button class="modal-btn" onclick="closeModal('resultModal')">开心收下</button>
+        </div>
+    </div>
+
+    <!-- 确认弹窗 -->
+    <div class="modal-mask" id="confirmModal">
+        <div class="modal-box">
+            <div style="font-size:48px; margin-bottom:10px;">💎</div>
+            <h3 style="margin:0; font-size:20px;">兑换大保底</h3>
+            <p style="color:#666; font-size:14px; margin:15px 0;">
+                确定消耗 500 积分兑换<br>
+                <b style="color:#6c5ce7;">任选一件一千元以内的礼物</b> 吗？
+            </p>
+            <button class="modal-btn cancel" onclick="closeModal('confirmModal')">取消</button>
+            <button class="modal-btn" onclick="doRedeem()">确认兑换</button>
         </div>
     </div>
 
     <script>
-        // ================= 配置区 =================
-        // 你在这里修改奖品、概率（weight）和积分
-        // 现在的设置：越贵的 weight 越小，越难抽中
-        const prizes = [
-            { name: "Lv5: 400-500元大礼", color: "#ffadad", weight: 5, score: 10 },
-            { name: "Lv4: 300-400元惊喜", color: "#ffd6a5", weight: 15, score: 30 },
-            { name: "Lv3: 200-300元礼物", color: "#fdffb6", weight: 30, score: 60 },
-            { name: "Lv2: 100-200元小物", color: "#caffbf", weight: 30, score: 100 },
-            { name: "Lv1: 奶茶/零食包",   color: "#9bf6ff", weight: 20, score: 150 }
-        ];
-        // =========================================
+        const config = {
+            redeemCost: 500,
+            prizes: [
+                // 确保 S 级红色最显眼
+                { grade: "S级", name: "价值400-500元 豪华礼盒", score: 10,  weight: 5,  color: "#ff4757" },
+                { grade: "A级", name: "价值300-400元 惊喜单品", score: 30,  weight: 15, color: "#ffa502" },
+                { grade: "B级", name: "价值200-300元 严选礼物", score: 60,  weight: 30, color: "#2ed573" },
+                { grade: "C级", name: "价值100-200元 实用好物", score: 100, weight: 30, color: "#1e90ff" },
+                { grade: "D级", name: "价值100元内 心意盲盒",   score: 150, weight: 20, color: "#a4b0be" }
+            ]
+        };
 
-        const wheel = document.getElementById('wheel');
-        let isSpinning = false;
+        let totalScore = parseInt(localStorage.getItem('loveScore')) || 0;
+        let history = JSON.parse(localStorage.getItem('loveHistory')) || [];
+        let currentTab = 'spin';
+        
+        const wheelEl = document.getElementById('wheel');
+        const scoreEl = document.getElementById('scoreVal');
+        const listEl = document.getElementById('listContainer');
+        const redeemBtn = document.getElementById('redeemBtn');
 
-        // 初始化转盘背景（conic-gradient）
-        function initWheel() {
-            let gradientStr = '';
-            let currentPercent = 0;
-            const segmentSize = 100 / prizes.length; // 视觉上平分扇形（虽然概率不同，但视觉平分更好看）
-
-            prizes.forEach((prize, index) => {
-                const start = currentPercent;
-                const end = currentPercent + segmentSize;
-                gradientStr += `${prize.color} ${start}% ${end}%,`;
-                currentPercent += segmentSize;
-            });
-            
-            // 去掉最后一个逗号
-            gradientStr = `conic-gradient(${gradientStr.slice(0, -1)})`;
-            wheel.style.background = gradientStr;
-        }
-
-        initWheel();
-
-        // 核心抽奖逻辑
-        function getPrizeIndex() {
-            const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
-            let random = Math.random() * totalWeight;
-            
-            for (let i = 0; i < prizes.length; i++) {
-                random -= prizes[i].weight;
-                if (random <= 0) {
-                    return i;
-                }
+        function init() {
+            // 生成泡泡
+            const box = document.getElementById('particles');
+            for(let i=0; i<20; i++){
+                let p = document.createElement('div');
+                p.className = 'particle';
+                let s = Math.random()*8 + 4 + 'px';
+                p.style.width = s; p.style.height = s;
+                p.style.left = Math.random()*100 + '%';
+                p.style.animation = `floatUp ${Math.random()*10 + 10}s linear infinite`;
+                box.appendChild(p);
             }
-            return prizes.length - 1;
+            drawWheel();
+            updateUI();
         }
 
-        function startSpin() {
-            if (isSpinning) return;
+        // === 核心绘制逻辑 ===
+		function drawWheel() {
+			let deg = 0;
+			const totalW = config.prizes.reduce((a,b)=>a+b.weight,0);
+			let grad = [];
+
+			wheelEl.innerHTML = '';
+			
+			config.prizes.forEach(p => {
+				const sliceDeg = (p.weight/totalW)*360;
+				
+				// 1. 扇形颜色
+				grad.push(`${p.color} ${deg}deg ${deg + sliceDeg}deg`);
+				
+				// 2. 文字定位
+				const label = document.createElement('div');
+				label.className = 'wheel-label';
+				// 旋转到扇形中间
+				let midDeg = deg + sliceDeg/2;
+				
+				// 【核心修复】这里减去90度，让文字逻辑(默认向右)对齐背景逻辑(默认向上)
+				label.style.transform = `rotate(${midDeg - 90}deg)`;
+				
+				const text = document.createElement('span');
+				text.className = 'wheel-text';
+				text.innerText = p.grade;
+
+				// 3. 智能翻转文字：防止下半圆的文字倒立难看
+				// 因为 midDeg 0度代表12点钟，所以 90~270度 代表下半圆
+				if(midDeg > 90 && midDeg < 270) {
+					text.style.transform = 'rotate(180deg)';
+				}
+
+				label.appendChild(text);
+				wheelEl.appendChild(label);
+
+				deg += sliceDeg;
+			});
+			wheelEl.style.background = `conic-gradient(${grad.join(',')})`;
+		}
+
+        let rot = 0;
+        let isSpinning = false;
+        function spin() {
+            if(isSpinning) return;
             isSpinning = true;
 
-            // 1. 计算中奖结果
-            const prizeIndex = getPrizeIndex();
-            const prize = prizes[prizeIndex];
+            const totalW = config.prizes.reduce((a,b)=>a+b.weight,0);
+            let r = Math.random()*totalW;
+            let p = null;
+            for(let item of config.prizes){
+                r -= item.weight;
+                if(r<=0) { p = item; break; }
+            }
+            if(!p) p = config.prizes[config.prizes.length-1];
 
-            // 2. 计算旋转角度
-            // 视觉上平分，所以每个扇形角度是 360 / 数量
-            const segmentDeg = 360 / prizes.length;
-            // 目标是指针指向该扇形中间。由于指针在正上方(0度)，我们需要反向旋转
-            // 基础旋转圈数 (5圈以上，增加紧张感)
-            const baseRotations = 360 * 8; 
-            // 计算目标扇形的中心角度（假设第0个在0-72度）
-            // 我们需要让轮盘转动，使得该扇形停在上方
-            // 简单的数学处理：随机落点在扇形范围内
-            const randomOffset = Math.random() * (segmentDeg - 10) + 5; // 留点边距
-            // 目标角度计算逻辑：为了让特定块停在上面，需要精细计算，这里简化处理：
-            // 因为CSS旋转是顺时针，0度在12点。
-            // 实际上为了简单，我们让它转到一个大概位置，重点是逻辑结果
-            // 这里为了精准匹配视觉，我们反推：
-            // 第i个扇形的起始角度是 i * segmentDeg
-            // 要让它停在12点，需要转动的角度 = (360 - (i * segmentDeg + segmentDeg/2)) 
-            const stopAngle = (360 - (prizeIndex * segmentDeg + segmentDeg / 2));
+            // 算出目标角度
+            let currentDeg = 0;
+            for(let item of config.prizes) {
+                if(item === p) break;
+                currentDeg += (item.weight/totalW)*360;
+            }
+            const sliceDeg = (p.weight/totalW)*360;
+            const centerDeg = currentDeg + sliceDeg/2;
             
-            const totalRotate = baseRotations + stopAngle;
+            // 指针在上方(0度)，目标是让 centerDeg 转到 0 度 (360)
+            // 加上随机偏移
+            const offset = (Math.random()-0.5) * sliceDeg * 0.4;
+            const target = 360 - (centerDeg + offset);
 
-            // 3. 执行动画
-            wheel.style.transform = `rotate(${totalRotate}deg)`;
+            rot += 360*8 + (target - rot%360);
+            wheelEl.style.transform = `rotate(${rot}deg)`;
 
-            // 4. 动画结束后弹窗
             setTimeout(() => {
-                showResult(prize);
                 isSpinning = false;
-                // 重置转盘角度（可选，为了下次旋转不累加太大数字，但为了视觉连贯通常不重置或用特殊处理）
-                // 这里的简易版就不重置了，下次直接在这个基础上加
-            }, 4000); // 4秒和CSS里的transition时间一致
+                addLog('spin', p.grade, p.name, p.score);
+                showResult(p.grade + '惊喜', p.name, `积分 +${p.score}`);
+            }, 8000);
         }
 
-        function showResult(prize) {
-            const modal = document.getElementById('modal');
-            const text = document.getElementById('resultText');
-            const score = document.getElementById('resultScore');
-
-            text.innerHTML = `恭喜抽中：<br><strong>${prize.name}</strong>`;
-            score.innerHTML = `获得积分：+${prize.score}`;
-            modal.style.display = 'flex';
+        function addLog(type, title, desc, score) {
+            totalScore += score;
+            history.unshift({type, title, desc, score, time: new Date().toLocaleDateString()});
+            save();
         }
 
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
+        function save() {
+            localStorage.setItem('loveScore', totalScore);
+            localStorage.setItem('loveHistory', JSON.stringify(history));
+            updateUI();
         }
+
+        function updateUI() {
+            scoreEl.innerText = totalScore;
+            
+            if(totalScore >= config.redeemCost) {
+                redeemBtn.disabled = false;
+                redeemBtn.innerHTML = "✨ 立即兑换保底大奖 ✨";
+            } else {
+                redeemBtn.disabled = true;
+                redeemBtn.innerHTML = `还差 ${config.redeemCost - totalScore} 分兑换`;
+            }
+
+            const list = history.filter(h => h.type === currentTab);
+            listEl.innerHTML = list.length ? list.map(h => `
+                <div class="log-item">
+                    <div>
+                        <div class="log-title">${h.title}</div>
+                        <div class="log-desc">${h.desc} | ${h.time}</div>
+                    </div>
+                    <div style="font-weight:bold; color:${h.score>0?'#2ed573':'#6c5ce7'}">
+                        ${h.score>0?'+':''}${h.score}
+                    </div>
+                </div>
+            `).join('') : '<div style="text-align:center;color:#ccc;padding:20px;">暂无记录</div>';
+        }
+
+        function switchTab(t) {
+            currentTab = t;
+            document.getElementById('tabSpin').className = t==='spin'?'tab active':'tab';
+            document.getElementById('tabRedeem').className = t==='redeem'?'tab active':'tab';
+            updateUI();
+        }
+
+        function doRedeem() {
+            closeModal('confirmModal');
+            addLog('redeem', '兑换成功', '消耗积分', -config.redeemCost);
+            setTimeout(() => {
+                showResult('兑换成功', '已扣除积分', '快去截图发给男朋友！');
+            }, 300);
+        }
+
+        function showResult(title, desc, sub) {
+            document.getElementById('rTitle').innerText = title;
+            document.getElementById('rDesc').innerHTML = `<b>${desc}</b><br><span style="color:#ff7675; font-size:14px; margin-top:5px; display:inline-block">${sub}</span>`;
+            document.getElementById('resultModal').style.display = 'flex';
+        }
+        function askRedeem() { document.getElementById('confirmModal').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        init();
     </script>
 </body>
 </html>
